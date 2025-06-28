@@ -1,0 +1,172 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Crypto Exchange App Interaction</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            margin: 0;
+            padding: 20px;
+            background-color: #f5f5f5;
+            text-align: center;
+        }
+        .container {
+            max-width: 800px;
+            margin: 0 auto;
+            background-color: #fff;
+            padding: 20px;
+            border-radius: 10px;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+        }
+        h1 {
+            color: #333;
+            margin-bottom: 20px;
+        }
+        .screen {
+            margin: 20px auto;
+            position: relative;
+            width: 360px;
+            height: 640px;
+            border: 10px solid #333;
+            border-radius: 20px;
+            overflow: hidden;
+        }
+        .screen img {
+            width: 100%;
+            height: auto;
+        }
+        .controls {
+            margin-top: 20px;
+            display: flex;
+            flex-wrap: wrap;
+            justify-content: center;
+            gap: 10px;
+        }
+        button {
+            padding: 10px 15px;
+            background-color: #4CAF50;
+            color: white;
+            border: none;
+            border-radius: 5px;
+            cursor: pointer;
+            font-size: 16px;
+        }
+        button:hover {
+            background-color: #45a049;
+        }
+        .refresh {
+            margin-top: 10px;
+            padding: 5px;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+        }
+        #refreshInterval {
+            width: 60px;
+            margin: 0 10px;
+            padding: 5px;
+        }
+        .custom-action {
+            margin-top: 20px;
+            display: flex;
+            justify-content: center;
+        }
+        #customCommand {
+            width: 70%;
+            padding: 10px;
+            margin-right: 10px;
+            border: 1px solid #ddd;
+            border-radius: 5px;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>Crypto Exchange App Interaction</h1>
+        
+        <div class="refresh">
+            <span>Auto-refresh: </span>
+            <input type="number" id="refreshInterval" value="3" min="1" max="10">
+            <span> seconds</span>
+            <button onclick="toggleAutoRefresh()" id="refreshButton">Start Auto-refresh</button>
+        </div>
+        
+        <div class="screen">
+            <img id="screenImage" src="screenshot.png" alt="Emulator Screen">
+        </div>
+        
+        <div class="controls">
+            <button onclick="sendCommand('tap 180 320')">Tap Center</button>
+            <button onclick="sendCommand('swipe 180 500 180 200 500')">Swipe Up</button>
+            <button onclick="sendCommand('swipe 180 200 180 500 500')">Swipe Down</button>
+            <button onclick="sendCommand('swipe 300 320 100 320 500')">Swipe Left</button>
+            <button onclick="sendCommand('swipe 100 320 300 320 500')">Swipe Right</button>
+            <button onclick="sendCommand('keyevent 4')">Back</button>
+            <button onclick="sendCommand('keyevent 3')">Home</button>
+            <button onclick="refreshScreen()">Refresh Screen</button>
+        </div>
+        
+        <div class="custom-action">
+            <input type="text" id="customCommand" placeholder="E.g., 'tap 150 300' or 'text \"hello\"'">
+            <button onclick="sendCustomCommand()">Send</button>
+        </div>
+        
+        <div class="custom-action">
+            <input type="text" id="tapCoordinates" placeholder="Enter tap coordinates (e.g., 150 300)">
+            <button onclick="sendTapCommand()">Tap</button>
+        </div>
+    </div>
+    
+    <script>
+        let autoRefreshInterval;
+        let isAutoRefreshing = false;
+        
+        function refreshScreen() {
+            // Add timestamp to prevent caching
+            document.getElementById('screenImage').src = 'screenshot.png?' + new Date().getTime();
+            fetch('refresh-screenshot.php');
+        }
+        
+        function toggleAutoRefresh() {
+            if (isAutoRefreshing) {
+                clearInterval(autoRefreshInterval);
+                document.getElementById('refreshButton').textContent = "Start Auto-refresh";
+                isAutoRefreshing = false;
+            } else {
+                const interval = document.getElementById('refreshInterval').value * 1000;
+                autoRefreshInterval = setInterval(refreshScreen, interval);
+                document.getElementById('refreshButton').textContent = "Stop Auto-refresh";
+                isAutoRefreshing = true;
+            }
+        }
+        
+        function sendCommand(command) {
+            fetch('send-command.php?command=' + encodeURIComponent(command))
+                .then(response => response.text())
+                .then(data => {
+                    console.log('Command sent:', data);
+                    setTimeout(refreshScreen, 500); // Refresh after command execution
+                });
+        }
+        
+        function sendCustomCommand() {
+            const command = document.getElementById('customCommand').value;
+            if (command) {
+                sendCommand(command);
+            }
+        }
+        
+        function sendTapCommand() {
+            const coordinates = document.getElementById('tapCoordinates').value;
+            if (coordinates) {
+                sendCommand('tap ' + coordinates);
+            }
+        }
+        
+        // Initial screen load
+        refreshScreen();
+    </script>
+</body>
+</html>
